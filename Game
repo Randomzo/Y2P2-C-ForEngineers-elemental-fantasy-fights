@@ -1,0 +1,325 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <ctime>
+#include <cstdlib>
+#include <fstream>
+using namespace std;
+// Constants for game settings
+#define EASY_WORDS 10
+#define MEDIUM_WORDS 8
+#define HARD_WORDS 5
+#define FINAL_BOSS_WORDS 3
+// Constants for roles
+#define WARRIOR 1
+#define MAGE 2
+#define ROGUE 3
+// Player variables
+string playerName = "Egoist";
+int playerRole = 0;
+string playerElement = "Unknown";
+// Abstract class
+class SpellCaster {
+public:
+virtual void castSpell() const = 0; // Pure virtual function
+};
+// Base class
+class Character : public SpellCaster {
+protected:
+string name;
+string job;
+string element;
+public:
+Character(string charName, string charJob, string
+charElement)
+: name(charName), job(charJob), element(charElement) {}
+virtual ~Character() {}
+virtual void display() const {
+cout << "Name: " << name << "\nRole: " << job << "\nElement:
+" << element << endl;
+}
+void castSpell() const override {
+cout << name << " casts a powerful " << element << " spell!"
+<< endl;
+}
+};
+// Function to load words from the file into categories
+void loadWordsFromFile(const string &filename, vector<string>
+&easy, vector<string> &medium, vector<string> &hard,
+vector<string> &finalBoss) {
+ifstream file(filename);
+string word;
+int count = 0;
+if (!file.is_open()) {
+cerr << "Error: Could not open file " << filename << endl;
+exit(1);
+}
+while (file >> word) {
+if (count < EASY_WORDS) {
+easy.push_back(word);
+} else if (count < EASY_WORDS + MEDIUM_WORDS) {
+medium.push_back(word);
+} else if (count < EASY_WORDS + MEDIUM_WORDS + HARD_WORDS) {
+hard.push_back(word);
+} else {
+finalBoss.push_back(word);
+}
+count++;
+}
+file.close();
+if (easy.empty() || medium.empty() || hard.empty() ||
+finalBoss.empty()) {
+cerr << "Error: Insufficient words in " << filename << endl;
+exit(1);
+}
+}
+// Hangman gameplay function
+bool playHangman(const vector<string> &wordList, int baseAttempts,
+string level) {
+srand(time(0));
+string selectedWord = wordList[rand() % wordList.size()];
+string guessedWord(selectedWord.size(), '_');
+int attemptsLeft = baseAttempts;
+// Adjust gameplay based on role
+if (playerRole == ROGUE) {
+attemptsLeft += 2; // Rogue gets more guesses
+} else if (playerRole == MAGE) {
+// Mage gets one letter revealed
+for (size_t i = 0; i < selectedWord.size(); ++i) {
+if (guessedWord[i] == '_') {
+guessedWord[i] = selectedWord[i];
+break;
+}
+}
+}
+cout << "**************************************************"
+<< endl;
+cout << "Level: " << level << ". You must guess the word!" <<
+endl;
+cout << "Element: " << playerElement << endl;
+while (attemptsLeft > 0 && guessedWord != selectedWord) {
+cout << "\nCurrent word: " << guessedWord << " | Attempts
+left: " << attemptsLeft << endl;
+// Warrior ability: Hint (reveal one random letter)
+if (playerRole == WARRIOR && attemptsLeft == baseAttempts /
+2) {
+cout << "Warrior hint activated: A letter is revealed!"
+<< endl;
+for (size_t i = 0; i < selectedWord.size(); ++i) {
+if (guessedWord[i] == '_') {
+guessedWord[i] = selectedWord[i];
+break;
+}
+}
+}
+cout << "Enter a letter: ";
+char guess;
+cin >> guess;
+bool correctGuess = false;
+for (size_t i = 0; i < selectedWord.size(); ++i) {
+if (selectedWord[i] == guess && guessedWord[i] != guess)
+{
+guessedWord[i] = guess;
+correctGuess = true;
+}
+}
+if (correctGuess) {
+cout << "Good guess!" << endl;
+} else {
+cout << "Wrong guess!" << endl;
+attemptsLeft--;
+}
+}
+if (guessedWord == selectedWord) {
+cout << "Congratulations! You guessed the word: " <<
+selectedWord << endl;
+return true; // Victory
+} else {
+cout << "You failed. The correct word was: " << selectedWord
+<< endl;
+return false; // Loss
+}
+}
+void startGame() {
+vector<string> easyWords, mediumWords, hardWords,
+finalBossWords;
+string filename = "HangWords.txt";
+// Load words from file
+loadWordsFromFile(filename, easyWords, mediumWords,
+hardWords, finalBossWords);
+cout << "Welcome to Elemental Fantasy Fights!" << endl;
+// Easy
+cout << "\nEASY LEVEL" << endl;
+if (!playHangman(easyWords, 6, "EASY")) {
+cout << "You lost at the EASY level. Better luck next time!"
+<< endl;
+return;
+}
+// Medium
+cout << "\nMEDIUM LEVEL" << endl;
+if (!playHangman(mediumWords, 5, "MEDIUM")) {
+cout << "You lost at the MEDIUM level. Better luck next
+time!" << endl;
+return;
+}
+// Hard
+cout << "\nHARD LEVEL" << endl;
+if (!playHangman(hardWords, 4, "HARD")) {
+cout << "You lost at the HARD level. Better luck next time!"
+<< endl;
+return;
+}
+// boss level
+cout << "\nFINAL BOSS LEVEL" << endl;
+if (!playHangman(finalBossWords, 3, "FINAL BOSS")) {
+cout << "You lost at the FINAL BOSS level. The Dark Silencer
+wins!" << endl;
+return;
+}
+cout << "**************************************************"
+<< endl;
+cout << "Congratulations! You defeated the Dark Silencer and
+saved Mybehdd!" << endl;
+cout << "**************************************************"
+<< endl;
+}
+// Player initialization
+void initializePlayer() {
+cout << "Enter your name: ";
+string tempName;
+cin >> tempName;
+playerName = "Egoist"; // Overwrite name
+cout << "Welcome, Egoist! Your name has been chosen by
+fate.\n";
+cout << "Choose your role:\n1. Warrior\n2. Mage\n3.
+Rogue\nEnter your choice: ";
+cin >> playerRole;
+switch (playerRole) {
+case WARRIOR:
+cout << "You chose Warrior! Prepare for battle.\n";
+break;
+case MAGE:
+cout << "You chose Mage! Your spells will guide you.\n";
+break;
+case ROGUE:
+cout << "You chose Rogue! Stealth and cunning are your
+tools.\n";
+break;
+default:
+cout << "Invalid choice. Defaulting to Warrior.\n";
+playerRole = WARRIOR;
+}
+cout << "Choose your element:\n1. Fire\n2. Water\n3.
+Earth\n4. Air\nEnter your choice: ";
+int elementChoice;
+cin >> elementChoice;
+switch (elementChoice) {
+case 1:
+playerElement = "Fire";
+break;
+case 2:
+playerElement = "Water";
+break;
+case 3:
+playerElement = "Earth";
+break;
+case 4:
+playerElement = "Air";
+break;
+default:
+cout << "Invalid choice. Defaulting to Fire.\n";
+playerElement = "Fire";
+}
+cout << "You are Egoist, the " << playerElement << " " <<
+(playerRole == WARRIOR ? "Warrior" : playerRole == MAGE ? "Mage" :
+"Rogue") << "!\n";
+}
+// start menu
+void StartMenu() {
+string choice;
+while (true) {
+cout << "**************************************************"
+<< endl;
+cout << "* Welcome to Elemental Fantasy Fights! *" <<
+endl;
+cout << "**************************************************"
+<< endl;
+cout << "1. Story\n2. Play\n3. Credits\n4. Exit\nEnter
+choice: ";
+cin >> choice;
+if (choice == "1") {
+cout << "**************************************************"
+<< endl;
+cout << "* STORY *"
+<< endl;
+cout << "**************************************************"
+<< endl;
+cout << "In the ancient land of Mybehdd, words are more than
+simple sounds;" << endl;
+cout << "they are conduits of pure magic. With the balance of
+power under" << endl;
+cout << "threat by rising darkness, you are chosen to become
+a Wordsmith," << endl;
+cout << "one who can wield words as weapons, wielding the
+power of both" << endl;
+cout << "language and elements." << endl << endl;
+cout << "One fateful night, you are drawn to a hidden grove,
+where four" << endl;
+cout << "Elemental Guardians appear before you, each
+embodying a primal" << endl;
+cout << "force as a sacred spirit. They each offer you a path
+forward:" << endl;
+cout << "Gother the Fire Ram - symbolizing strength and
+passion." << endl;
+cout << "Warill the Water Bear - embodying adaptability and
+mystery." << endl;
+cout << "Terra the Earth Serpent - representing resilience
+and power." << endl;
+cout << "Ban the Air Fox - embodying agility and cunning." <<
+endl << endl;
+cout << "With the balance of Mybehdd threatened by the Dark
+Silencer, a force" << endl;
+cout << "seeking to erase all language and magic, you are
+chosen as the" << endl;
+cout << "Wordsmith to restore harmony. Guided by the
+Elemental Guardians, you" << endl;
+cout << "embark on a perilous journey." << endl << endl;
+cout << "Battling Shadowlings in the Whispering Woods,
+braving the Shifting" << endl;
+cout << "Sands’ trials of forgotten words, and confronting
+the Dark Silencer" << endl;
+cout << "in the Obsidian Citadel, you must wield the power of
+language and" << endl;
+cout << "elements to reclaim the Lexicon Core. Your mastery
+of words and" << endl;
+cout << "strategy will determine the fate of Mybehdd." <<
+endl;
+cout << "**************************************************"
+<< endl;
+} else if (choice == "2") {
+initializePlayer();
+startGame();
+} else if (choice == "3") {
+cout <<
+"**************************************************" << endl;
+cout << "* CREDITS
+*" << endl;
+cout <<
+"**************************************************" << endl;
+cout << "Developed by: Esiyemeh Idogho" << endl;
+cout << "Story and Design: Esiyemeh Idogho"<< endl;
+cout << "Music: Not Frank Ocean :("<< endl;
+cout << "Thank you for playing loser!" << endl;
+} else if (choice == "4") {
+cout << "Goodbye!\n";
+break;
+} else {
+cout << "Invalid choice. Try again.\n";
+}
+}
+}
+// Main function
+int main() {
+StartMenu();
+return 0;
+}
